@@ -3,13 +3,33 @@
     <iframe width="560" height="315" src="https://www.youtube.com/embed/{{.VideoID}}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
 </div>
 <h2>{{.VideoTitle}}</h2>
-
-<!-- Add this section to display the transcript link -->
-{{if .TranscriptFilename}}
-<p><a href="/transcript/{{.TranscriptID}}" target="_blank">View Transcript</a></p>
-{{end}}
+<!-- Form to process the video -->
+<form hx-post="/process-video" hx-target="#result" hx-swap="outerHTML" hx-indicator="#loading-indicator">
+    <input type="hidden" name="videoID" value="{{.VideoID}}">
+    <div>
+        <label for="model">Model:</label>
+        <select name="model" id="model">
+            <option value="default">Default</option>
+            <option value="gpt-4o">GPT-4o</option>
+        </select>
+    </div>
+    <div>
+        <label for="pattern">Pattern Type:</label>
+        <select name="pattern" id="pattern">
+            <option value="extract_wisdom">Extract Wisdom</option>
+            <option value="summarize">Summarize</option>
+            <option value="rate_value">Rate Value</option>
+        </select>
+    </div>
+    <button type="submit">Process Video</button>
+</form>
+<!-- Loading indicator -->
+<div id="loading-indicator" style="display:none;">Processing...</div>
+<!-- Placeholder for the result -->
+<div id="result"></div>
 
 {{range .Files}}
-<p><a href="/processed/{{$.TranscriptID}}/{{.Name}}" >{{.Name}}</a></p>
+<p><a href="/videos/{{$.VideoID}}/{{.}}" >{{.}}</a></p>
 {{end}}
+
 {{end}}

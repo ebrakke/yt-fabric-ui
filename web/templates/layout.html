@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .Title }} - Fabric Agents</title>
+    <title>{{ .Title }} - Youtube Fabric Summarize</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <!-- Add HTMX script -->
     <script src="https://unpkg.com/htmx.org@1.9.6"></script>
@@ -41,8 +41,7 @@
     <h1>{{ .Title }}</h1>
     <nav class="nav">
         <a href="/">Home</a>
-        <a href="/transcripts">Transcripts</a>
-        <a href="/processed">Processed Videos</a>
+        <a href="/videos">Videos</a>
     </nav>
     <div class="content">
         {{ block "content" . }}{{ end }}

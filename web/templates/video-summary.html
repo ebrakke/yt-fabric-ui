@@ -1,0 +1,7 @@
+{{define "content"}}
+<div class="video-container">
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/{{.VideoID}}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+</div>
+<h2>{{.VideoTitle}}</h2>
+<p>{{.Summary | markdown}}</p>
+{{end}}

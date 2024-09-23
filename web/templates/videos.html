@@ -1,0 +1,9 @@
+{{define "content"}}
+<ul>
+    {{range .Videos}}
+    <li>
+        <a href="/videos/{{.ID}}">{{.Title}}</a>
+    </li>
+    {{end}}
+</ul>
+{{end}}
