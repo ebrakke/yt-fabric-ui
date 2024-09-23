@@ -1,0 +1,11 @@
+{{ define "content" }}
+<div class="transcript-container">
+    <h2 class="transcript-title">Transcript</h2>
+    <button hx-post="/process/{{ .TranscriptID }}" hx-target="body" hx-swap="outerHTML" hx-push-url="true">
+        Process Transcript
+    </button>
+    <div class="transcript-content">
+        {{ .Transcript }}
+    </div>
+</div>
+{{ end }}

@@ -1,0 +1,15 @@
+{{define "content"}}
+<div class="video-container">
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/{{.VideoID}}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+</div>
+<h2>{{.VideoTitle}}</h2>
+
+<!-- Add this section to display the transcript link -->
+{{if .TranscriptFilename}}
+<p><a href="/transcript/{{.TranscriptID}}" target="_blank">View Transcript</a></p>
+{{end}}
+
+{{range .Files}}
+<p><a href="/processed/{{$.TranscriptID}}/{{.Name}}" >{{.Name}}</a></p>
+{{end}}
+{{end}}

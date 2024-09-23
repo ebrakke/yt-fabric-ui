@@ -1,0 +1,80 @@
+{{ define "content" }}
+    <div class="container">
+        <h1 class="title">Fabric Agents</h1>
+        <p class="description">
+            Process and analyze YouTube content with ease. Transcribe videos, search for specific content, and run pattern analysis on video transcripts.
+        </p>
+        
+        <div class="submit-section">
+            <h2>Submit YouTube Videos</h2>
+            <form hx-post="/submit-videos" hx-target="#result">
+                <textarea name="video_links" rows="5" placeholder="Paste YouTube video links here, one per line"></textarea>
+                <button type="submit">Process Videos</button>
+            </form>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+<style>
+    .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+    }
+    
+    .title {
+        color: #2c3e50;
+        text-align: center;
+    }
+    
+    .description {
+        color: #34495e;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .submit-section {
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    h2 {
+        color: #2c3e50;
+        margin-top: 0;
+    }
+    
+    textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #bdc3c7;
+        border-radius: 4px;
+        resize: vertical;
+        font-size: 14px;
+    }
+    
+    button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin-top: 10px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    
+    button:hover {
+        background-color: #2980b9;
+    }
+    
+    #result {
+        margin-top: 20px;
+    }
+</style>
+{{ end }}

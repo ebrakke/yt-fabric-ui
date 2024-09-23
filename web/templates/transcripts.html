@@ -1,0 +1,8 @@
+{{ define "content" }}
+<h2>Transcripts</h2>
+<ul>
+    {{ range .Transcripts }}
+        <li><a href="/transcripts/{{ . }}">{{ . }}</a></li>
+    {{ end }}
+</ul>
+{{ end }}
