@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // LoadVideos loads all videos from the data directory
@@ -22,7 +23,9 @@ func LoadVideos(dataDir string) ([]yt.Video, error) {
 			if err != nil {
 				return nil, err
 			}
-			videos = append(videos, video)
+			if video != nil {
+				videos = append(videos, *video)
+			}
 		}
 	}
 	return videos, nil
@@ -47,21 +50,21 @@ func SaveVideoFabricOutput(videoID string, output string, summary string, model 
 	return os.WriteFile(outputPath, []byte(output), 0644)
 }
 
-func LoadVideo(videoID string, dataDir string) (yt.Video, error) {
+func LoadVideo(videoID string, dataDir string) (*yt.Video, error) {
 	videoDir := filepath.Join(dataDir, videoID)
 	transcriptPath := filepath.Join(videoDir, "data.json")
 	videoJSON, err := os.ReadFile(transcriptPath)
 	if err != nil {
-		return yt.Video{}, err
+		return nil, nil
 	}
 
 	var video yt.Video
 	err = json.Unmarshal(videoJSON, &video)
 	if err != nil {
-		return yt.Video{}, err
+		return nil, err
 	}
 
-	return video, nil
+	return &video, nil
 }
 
 func LoadVideoSummary(videoID string, dataDir string, summaryFileName string) (string, error) {
@@ -88,4 +91,36 @@ func LoadVideoFiles(videoID string, dataDir string) ([]string, error) {
 		}
 	}
 	return filePaths, nil
+}
+
+func DeleteVideo(videoID string, dataDir string) error {
+	videoDir := filepath.Join(dataDir, videoID)
+	return os.RemoveAll(videoDir)
+}
+
+func LoadPatterns() ([]string, error) {
+	patterns, err := os.ReadFile("data/patterns.txt")
+	if err != nil {
+		return nil, err
+	}
+	return strings.Split(string(patterns), "\n"), nil
+}
+
+func LoadModels() ([]Model, error) {
+	models, err := os.ReadFile("data/models.txt")
+	if err != nil {
+		return nil, err
+	}
+	modelLines := strings.Split(string(models), "\n")
+	var modelList []Model
+	for _, modelLine := range modelLines {
+		modelParts := strings.Split(modelLine, "/")
+		if len(modelParts) == 2 {
+			modelList = append(modelList, Model{
+				Provider: modelParts[0],
+				Name:     modelParts[1],
+			})
+		}
+	}
+	return modelList, nil
 }

@@ -3,7 +3,7 @@ package web
 import (
 	"fmt"
 	"html/template"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -30,15 +30,17 @@ type Handler struct {
 	processor *core.Processor
 	router    *mux.Router
 	dataDir   string
+	logger    *slog.Logger
 }
 
-func NewHandler(p *core.Processor, dataDir string) *Handler {
+func NewHandler(p *core.Processor, dataDir string, logger *slog.Logger) *Handler {
 	h := &Handler{
 		processor: p,
 		dataDir:   dataDir,
+		logger:    logger,
 	}
 	h.setupRoutes()
-	log.Println("Handler initialized")
+	h.logger.Info("Handler initialized")
 	return h
 }
 
@@ -57,8 +59,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleVideos(w http.ResponseWriter, r *http.Request) {
+	h.logger.Debug("Handling /videos request")
 	videos, err := core.LoadVideos(h.dataDir)
 	if err != nil {
+		h.logger.Error("Failed to load videos", "error", err)
 		http.Error(w, fmt.Sprintf("Failed to load videos: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -68,65 +72,119 @@ func (h *Handler) handleVideos(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleIndex(w http.ResponseWriter, r *http.Request) {
+	h.logger.Debug("Handling / request")
 	tmpl := template.Must(template.ParseFiles("web/templates/layout.html", "web/templates/index.html"))
 	tmpl.Execute(w, map[string]string{"Title": "Home"})
 }
 
 func (h *Handler) handleSubmitVideos(w http.ResponseWriter, r *http.Request) {
+	h.logger.Debug("Handling /submit-videos request")
 	videoLinks := r.FormValue("video_links")
 	videoLinksList := strings.Split(videoLinks, "\n")
 	for _, videoLink := range videoLinksList {
+		h.logger.Info("Processing video link", "link", videoLink)
 		h.processor.FetchVideo(videoLink)
 	}
+	h.logger.Info("Videos processed", "count", len(videoLinksList))
 	fmt.Fprintf(w, "Videos processed: %d", len(videoLinksList))
 }
 
 func (h *Handler) handleVideoByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	videoID := vars["id"]
+	h.logger.Debug("Handling /videos/{id} request", "videoID", videoID)
+
+	// Check if this is a delete request
+	if r.Method == "DELETE" {
+		h.logger.Info("Deleting video", "videoID", videoID)
+		err := core.DeleteVideo(videoID, h.dataDir)
+		if err != nil {
+			h.logger.Error("Failed to delete video", "videoID", videoID, "error", err)
+			http.Error(w, fmt.Sprintf("Failed to delete video: %v", err), http.StatusInternalServerError)
+			return
+		}
+		// Redirect to the videos list page after successful deletion
+		w.Header().Set("HX-Redirect", "/videos")
+		return
+	}
 
 	video, err := core.LoadVideo(videoID, h.dataDir)
 	if err != nil {
+		h.logger.Error("Failed to load video", "videoID", videoID, "error", err)
 		http.Error(w, fmt.Sprintf("Failed to load video: %v", err), http.StatusInternalServerError)
 		return
 	}
 	files, err := core.LoadVideoFiles(videoID, h.dataDir)
 	if err != nil {
+		h.logger.Error("Failed to load video files", "videoID", videoID, "error", err)
 		http.Error(w, fmt.Sprintf("Failed to load video files: %v", err), http.StatusInternalServerError)
 		return
 	}
 	models, err := core.ListModels()
 	if err != nil {
+		h.logger.Error("Failed to load models", "error", err)
 		http.Error(w, fmt.Sprintf("Failed to load models: %v", err), http.StatusInternalServerError)
 		return
 	}
 	patterns, err := core.ListPatterns()
 	if err != nil {
+		h.logger.Error("Failed to load patterns", "error", err)
 		http.Error(w, fmt.Sprintf("Failed to load patterns: %v", err), http.StatusInternalServerError)
+		return
+	}
+	savedPatterns, err := core.LoadPatterns()
+	if err != nil {
+		h.logger.Error("Failed to load saved patterns", "error", err)
+		http.Error(w, fmt.Sprintf("Failed to load patterns: %v", err), http.StatusInternalServerError)
+		return
+	}
+	savedModels, err := core.LoadModels()
+	if err != nil {
+		h.logger.Error("Failed to load saved models", "error", err)
+		http.Error(w, fmt.Sprintf("Failed to load models: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	tmpl, err := template.ParseFiles("web/templates/layout.html", "web/templates/video.html")
 	if err != nil {
+		h.logger.Error("Failed to parse template", "error", err)
 		http.Error(w, fmt.Sprintf("Failed to parse template: %v", err), http.StatusInternalServerError)
 		return
 	}
-	tmpl.Execute(w, map[string]interface{}{"Title": "Video", "VideoID": videoID, "VideoTitle": video.Title, "Files": files, "Models": models, "Patterns": patterns})
+
+	err = tmpl.Execute(w, map[string]interface{}{
+		"Title":       "Video",
+		"VideoID":     videoID,
+		"VideoTitle":  video.Title,
+		"Files":       files,
+		"Models":      savedModels,
+		"Patterns":    savedPatterns,
+		"AllModels":   models,
+		"AllPatterns": patterns,
+	})
+	if err != nil {
+		h.logger.Error("Failed to execute template", "error", err)
+		http.Error(w, fmt.Sprintf("Failed to execute template: %v", err), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *Handler) handleVideoByIDSummary(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	videoID := vars["id"]
 	summary := vars["summary"]
+	h.logger.Debug("Handling /videos/{id}/{summary} request", "videoID", videoID, "summary", summary)
 
 	summary, err := core.LoadVideoSummary(videoID, h.dataDir, summary)
 	if err != nil {
+		h.logger.Error("Failed to load video summary", "videoID", videoID, "summary", summary, "error", err)
 		http.Error(w, fmt.Sprintf("Failed to load video summary: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	tmpl, err := template.New("layout.html").Funcs(templateFuncs).ParseFiles("web/templates/layout.html", "web/templates/video-summary.html")
 	if err != nil {
+		h.logger.Error("Failed to parse template", "error", err)
 		http.Error(w, fmt.Sprintf("Failed to parse template: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -137,9 +195,11 @@ func (h *Handler) handleProcessVideo(w http.ResponseWriter, r *http.Request) {
 	videoID := r.FormValue("videoID")
 	model := r.FormValue("model")
 	pattern := r.FormValue("pattern")
+	h.logger.Debug("Handling /process-video request", "videoID", videoID, "model", model, "pattern", pattern)
 
 	_, _, err := h.processor.ProcessVideo(videoID, model, pattern)
 	if err != nil {
+		h.logger.Error("Failed to process video", "videoID", videoID, "model", model, "pattern", pattern, "error", err)
 		http.Error(w, fmt.Sprintf("Failed to process video: %v", err), http.StatusInternalServerError)
 		return
 	}
