@@ -9,6 +9,7 @@ import (
 // RunFabric runs the fabric command with the given pattern and model
 func RunFabric(input, pattern, model string) (string, error) {
 	var cmd *exec.Cmd
+	fmt.Println("Running fabric with pattern:", pattern, "and model:", model)
 	if model != "" && model != "default" {
 		cmd = exec.Command("fabric", "--pattern", pattern, "--model", model)
 	} else {
@@ -39,21 +40,13 @@ func ListPatterns() ([]string, error) {
 	return patterns, nil
 }
 
-func ListModels() ([]string, error) {
+func ListModels() ([]Model, error) {
 	cmd := exec.Command("fabric", "-L")
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("error listing models: %v", err)
 	}
-	models, err := ParseModels(string(output))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing models: %v", err)
-	}
-	modelNames := make([]string, 0, len(models))
-	for _, model := range models {
-		modelNames = append(modelNames, model.Name)
-	}
-	return modelNames, nil
+	return CleanModels(string(output)), nil
 }
 
 // Model represents a model with its provider and name
@@ -83,4 +76,39 @@ func ParseModels(output string) ([]Model, error) {
 		}
 	}
 	return models, nil
+}
+
+// CleanModels takes the raw output from fabric -L and returns a cleaned list of Models
+func CleanModels(output string) []Model {
+	lines := strings.Split(output, "\n")
+	var models []Model
+	var currentProvider string
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		if !strings.HasPrefix(line, "[") {
+			currentProvider = strings.TrimSuffix(line, ":")
+		} else if currentProvider != "" {
+			// Remove the index number and any leading/trailing whitespace
+			parts := strings.SplitN(line, "]", 2)
+			if len(parts) == 2 {
+				modelName := strings.TrimSpace(parts[1])
+				models = append(models, Model{
+					Provider: currentProvider,
+					Name:     modelName,
+				})
+			}
+		}
+	}
+	return models
+}
+
+// PrintCleanModels prints the cleaned models in the desired format
+func PrintCleanModels(models []Model) {
+	for _, model := range models {
+		fmt.Printf("{\n  provider: %s,\n  model: \"%s\"\n},\n", model.Provider, model.Name)
+	}
 }

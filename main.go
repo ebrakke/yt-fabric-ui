@@ -7,6 +7,7 @@ import (
 
 	"fabric-agents/core"
 	"fabric-agents/web"
+	"fabric-agents/yt"
 )
 
 func main() {
@@ -17,7 +18,8 @@ func main() {
 }
 
 func runWebServer(port string) {
-	handler := web.NewHandler(core.NewProcessor("data"), "data")
+	processor := core.NewProcessor("data", yt.NewYT(""))
+	handler := web.NewHandler(processor, "data")
 	http.Handle("/", handler)
 	log.Printf("Starting web server on port %s", port)
 	log.Fatal(http.ListenAndServe("0.0.0.0:"+port, nil))

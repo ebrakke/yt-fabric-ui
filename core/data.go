@@ -2,19 +2,20 @@ package core
 
 import (
 	"encoding/json"
+	"fabric-agents/yt"
 	"fmt"
 	"os"
 	"path/filepath"
 )
 
 // LoadVideos loads all videos from the data directory
-func LoadVideos(dataDir string) ([]Video, error) {
+func LoadVideos(dataDir string) ([]yt.Video, error) {
 	files, err := os.ReadDir(dataDir)
 	if err != nil {
 		return nil, err
 	}
 
-	var videos []Video
+	var videos []yt.Video
 	for _, file := range files {
 		if file.IsDir() {
 			video, err := LoadVideo(file.Name(), dataDir)
@@ -27,7 +28,7 @@ func LoadVideos(dataDir string) ([]Video, error) {
 	return videos, nil
 }
 
-func SaveVideo(video Video, dataDir string) error {
+func SaveVideo(video yt.Video, dataDir string) error {
 	videoDir := filepath.Join(dataDir, video.ID)
 	os.MkdirAll(videoDir, 0755)
 	transcriptPath := filepath.Join(videoDir, "data.json")
@@ -46,18 +47,18 @@ func SaveVideoFabricOutput(videoID string, output string, summary string, model 
 	return os.WriteFile(outputPath, []byte(output), 0644)
 }
 
-func LoadVideo(videoID string, dataDir string) (Video, error) {
+func LoadVideo(videoID string, dataDir string) (yt.Video, error) {
 	videoDir := filepath.Join(dataDir, videoID)
 	transcriptPath := filepath.Join(videoDir, "data.json")
 	videoJSON, err := os.ReadFile(transcriptPath)
 	if err != nil {
-		return Video{}, err
+		return yt.Video{}, err
 	}
 
-	var video Video
+	var video yt.Video
 	err = json.Unmarshal(videoJSON, &video)
 	if err != nil {
-		return Video{}, err
+		return yt.Video{}, err
 	}
 
 	return video, nil

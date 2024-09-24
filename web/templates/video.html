@@ -1,35 +1,52 @@
 {{define "content"}}
-<div class="video-container">
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/{{.VideoID}}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div class="aspect-w-16 aspect-h-9 mb-6">
+            <iframe class="w-full h-full rounded-lg" src="https://www.youtube.com/embed/{{.VideoID}}" frameborder="0"
+                allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+        <h2 class="text-2xl font-bold text-indigo-700 mb-4">{{.VideoTitle}}</h2>
+        
+        <form hx-post="/process-video" hx-target="#generated-files" hx-swap="afterbegin" hx-indicator="#loading-indicator" hx-disabled-elt="find button" class="space-y-4">
+            <input type="hidden" name="videoID" value="{{.VideoID}}">
+            <div class="flex items-center space-x-4">
+                <label for="model" class="text-gray-700 w-24">Model:</label>
+                <select name="model" id="model" class="flex-grow bg-gray-50 text-gray-800 border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="default">Default</option>
+                    {{range .Models}}
+                    <option value="{{.Name}}">{{.Provider}} - {{.Name}}</option>
+                    {{end}}
+                </select>
+            </div>
+            <div class="flex items-center space-x-4">
+                <label for="pattern" class="text-gray-700 w-24">Pattern Type:</label>
+                <select name="pattern" id="pattern" class="flex-grow bg-gray-50 text-gray-800 border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="summarize" selected>summarize</option>
+                    {{range .Patterns}}
+                    {{if ne . "summarize"}}
+                    <option value="{{.}}">{{.}}</option>
+                    {{end}}
+                    {{end}}
+                </select>
+            </div>
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50">
+                Process Video
+            </button>
+            <div id="loading-indicator" class="htmx-indicator text-center text-indigo-600">Processing...</div>
+        </form>
+    </div>
+
+    {{if .Files}}
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-xl font-semibold text-indigo-700 mb-4">Generated Files</h3>
+        <ul class="space-y-2" id="generated-files">
+            {{range .Files}}
+            <li>
+                <a href="/videos/{{$.VideoID}}/{{.}}" class="text-indigo-600 hover:text-indigo-800 transition duration-150 ease-in-out">{{.}}</a>
+            </li>
+            {{end}}
+        </ul>
+    </div>
+    {{end}}
 </div>
-<h2>{{.VideoTitle}}</h2>
-<!-- Form to process the video -->
-<form hx-post="/process-video" hx-target="#result" hx-swap="outerHTML" hx-indicator="#loading-indicator">
-    <input type="hidden" name="videoID" value="{{.VideoID}}">
-    <div>
-        <label for="model">Model:</label>
-        <select name="model" id="model">
-            <option value="default">Default</option>
-            <option value="gpt-4o">GPT-4o</option>
-        </select>
-    </div>
-    <div>
-        <label for="pattern">Pattern Type:</label>
-        <select name="pattern" id="pattern">
-            <option value="extract_wisdom">Extract Wisdom</option>
-            <option value="summarize">Summarize</option>
-            <option value="rate_value">Rate Value</option>
-        </select>
-    </div>
-    <button type="submit">Process Video</button>
-</form>
-<!-- Loading indicator -->
-<div id="loading-indicator" style="display:none;">Processing...</div>
-<!-- Placeholder for the result -->
-<div id="result"></div>
-
-{{range .Files}}
-<p><a href="/videos/{{$.VideoID}}/{{.}}" >{{.}}</a></p>
-{{end}}
-
 {{end}}

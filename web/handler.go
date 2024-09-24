@@ -11,12 +11,18 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/russross/blackfriday/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var templateFuncs = template.FuncMap{
 	"markdown": func(text string) template.HTML {
 		html := blackfriday.Run([]byte(text))
 		return template.HTML(html)
+	},
+	"formatVideoTitle": func(title string) template.HTML {
+		formattedTitle := cases.Title(language.English, cases.Compact).String(strings.ReplaceAll(title, "-", " "))
+		return template.HTML(fmt.Sprintf("<span class='text-2xl font-bold text-indigo-400'>%s</span>", formattedTitle))
 	},
 }
 
@@ -70,7 +76,7 @@ func (h *Handler) handleSubmitVideos(w http.ResponseWriter, r *http.Request) {
 	videoLinks := r.FormValue("video_links")
 	videoLinksList := strings.Split(videoLinks, "\n")
 	for _, videoLink := range videoLinksList {
-		h.processor.FetchVideoTranscript(videoLink)
+		h.processor.FetchVideo(videoLink)
 	}
 	fmt.Fprintf(w, "Videos processed: %d", len(videoLinksList))
 }
@@ -89,14 +95,23 @@ func (h *Handler) handleVideoByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Failed to load video files: %v", err), http.StatusInternalServerError)
 		return
 	}
-	fmt.Println(files)
+	models, err := core.ListModels()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to load models: %v", err), http.StatusInternalServerError)
+		return
+	}
+	patterns, err := core.ListPatterns()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to load patterns: %v", err), http.StatusInternalServerError)
+		return
+	}
 
 	tmpl, err := template.ParseFiles("web/templates/layout.html", "web/templates/video.html")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to parse template: %v", err), http.StatusInternalServerError)
 		return
 	}
-	tmpl.Execute(w, map[string]interface{}{"Title": "Video", "VideoID": videoID, "VideoTitle": video.Title, "Files": files})
+	tmpl.Execute(w, map[string]interface{}{"Title": "Video", "VideoID": videoID, "VideoTitle": video.Title, "Files": files, "Models": models, "Patterns": patterns})
 }
 
 func (h *Handler) handleVideoByIDSummary(w http.ResponseWriter, r *http.Request) {
@@ -123,11 +138,11 @@ func (h *Handler) handleProcessVideo(w http.ResponseWriter, r *http.Request) {
 	model := r.FormValue("model")
 	pattern := r.FormValue("pattern")
 
-	_, err := h.processor.ProcessVideo(videoID, model, pattern)
+	_, _, err := h.processor.ProcessVideo(videoID, model, pattern)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to process video: %v", err), http.StatusInternalServerError)
 		return
 	}
 	videoLink := fmt.Sprintf("/videos/%s/%s-%s.md", videoID, pattern, model)
-	fmt.Fprintf(w, `<a href="%s">Video processed</a>`, videoLink)
+	fmt.Fprintf(w, `<li><a href="%s" class="text-indigo-400 hover:text-indigo-300 transition duration-150 ease-in-out">%s-%s.md</a></li>`, videoLink, pattern, model)
 }

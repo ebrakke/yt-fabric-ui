@@ -1,50 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-gray-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .Title }} - Youtube Fabric Summarize</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <!-- Add HTMX script -->
+    <title>Youtube Fabric Summarizer</title>
     <script src="https://unpkg.com/htmx.org@1.9.6"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-        }
-        .nav {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 30px;
-        }
-        .nav a {
-            margin: 0 15px;
-            text-decoration: none;
-            color: #3498db;
-        }
-        .content {
-            background-color: #f9f9f9;
-            padding: 20px;
-            border-radius: 5px;
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/@tailwindcss/typography@0.5.0/dist/typography.min.css" rel="stylesheet">
 </head>
-<body>
-    <h1>{{ .Title }}</h1>
-    <nav class="nav">
-        <a href="/">Home</a>
-        <a href="/videos">Videos</a>
-    </nav>
-    <div class="content">
-        {{ block "content" . }}{{ end }}
-    </div>
+<body class="h-full flex overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white text-gray-700 flex flex-col shadow-md">
+        <div class="p-4 border-b border-gray-200">
+            <h1 class="text-xl font-bold text-indigo-700">YT Fabric</h1>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4">
+            <ul>
+                <li>
+                    <a href="/" class="block px-4 py-2 hover:bg-indigo-50 hover:text-indigo-700">Home</a>
+                </li>
+                <li>
+                    <a href="/videos" class="block px-4 py-2 hover:bg-indigo-50 hover:text-indigo-700">Videos</a>
+                </li>
+                <!-- Add more navigation items as needed -->
+            </ul>
+        </nav>
+        <div class="p-4 border-t border-gray-200">
+            <a href="#" class="text-sm text-gray-500 hover:text-indigo-700">Settings</a>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="flex-1 overflow-y-auto bg-gray-100">
+        <div class="container mx-auto px-4 py-8">
+            {{ block "content" . }}{{ end }}
+        </div>
+    </main>
 </body>
 </html>
